@@ -2,8 +2,11 @@ import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
+  const companyId = request.nextUrl.searchParams.get('companyId')
+  if (!companyId) return NextResponse.json({ error: 'companyId required' }, { status: 400 })
   try {
     const runs = await prisma.run.findMany({
+      where: { campaign: { ownCompanyId: companyId } },
       include: {
         campaign: {
           select: { id: true, name: true, status: true },

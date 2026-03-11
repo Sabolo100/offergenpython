@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -71,6 +72,7 @@ function RunStatusBadge({ status }: { status: string }) {
 
 export default function RunsPage() {
   const router = useRouter()
+  const { activeCompany } = useOwnCompany()
   const [runs, setRuns] = useState<Run[]>([])
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
@@ -80,9 +82,10 @@ export default function RunsPage() {
   const [error, setError] = useState<string | null>(null)
 
   async function fetchRuns() {
+    if (!activeCompany) return
     setLoading(true)
     try {
-      const res = await fetch('/api/runs')
+      const res = await fetch(`/api/runs?companyId=${activeCompany.id}`)
       const data = await res.json()
       setRuns(Array.isArray(data) ? data : [])
     } catch {
@@ -93,8 +96,9 @@ export default function RunsPage() {
   }
 
   async function fetchCampaigns() {
+    if (!activeCompany) return
     try {
-      const res = await fetch('/api/campaigns')
+      const res = await fetch(`/api/campaigns?companyId=${activeCompany.id}`)
       const data = await res.json()
       setCampaigns(Array.isArray(data) ? data : [])
     } catch {
@@ -103,9 +107,10 @@ export default function RunsPage() {
   }
 
   useEffect(() => {
+    if (!activeCompany) return
     fetchRuns()
     fetchCampaigns()
-  }, [])
+  }, [activeCompany]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function openNewRun() {
     setSelectedCampaignId('')

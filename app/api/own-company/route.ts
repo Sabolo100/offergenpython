@@ -1,18 +1,15 @@
 import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const company = await prisma.ownCompany.findFirst({
-      include: {
-        knowledgeItems: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
+    const companies = await prisma.ownCompany.findMany({
+      select: { id: true, name: true, description: true, website: true },
+      orderBy: { createdAt: 'asc' },
     })
-    return NextResponse.json(company)
+    return NextResponse.json(companies)
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch own company' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch own companies' }, { status: 500 })
   }
 }
 

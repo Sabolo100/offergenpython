@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -312,6 +313,7 @@ function ModuleDialog({
 // ── Főkomponens ───────────────────────────────────────────────────────────────
 
 export default function ModulesPage() {
+  const { activeCompany } = useOwnCompany()
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [modules, setModules] = useState<ModuleDefinition[]>([])
   const [loading, setLoading] = useState(true)
@@ -336,11 +338,12 @@ export default function ModulesPage() {
   // ── Adatok betöltése ────────────────────────────────────────────────────────
 
   const fetchAll = useCallback(async () => {
+    if (!activeCompany) return
     setLoading(true)
     setError(null)
     try {
       const [campaignsRes, modulesRes] = await Promise.all([
-        fetch('/api/campaigns'),
+        fetch(`/api/campaigns?companyId=${activeCompany.id}`),
         fetch('/api/module-defs'),   // ← javítva: module-defs (nem module-definitions)
       ])
       const campaignsData = await campaignsRes.json()
@@ -352,7 +355,7 @@ export default function ModulesPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeCompany])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 

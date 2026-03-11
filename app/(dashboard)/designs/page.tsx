@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -140,6 +141,7 @@ function DesignPreview({ config }: { config: DesignConfig }) {
 // ── Fokomponens ───────────────────────────────────────────────────────────────
 
 export default function DesignsPage() {
+  const { activeCompany } = useOwnCompany()
   const [designs, setDesigns]           = useState<Design[]>([])
   const [loading, setLoading]           = useState(true)
   const [seeding, setSeeding]           = useState(false)
@@ -155,9 +157,10 @@ export default function DesignsPage() {
   // ── Betoltes + auto-seed ──────────────────────────────────────────────────
 
   async function fetchDesigns(autoSeedIfEmpty = false) {
+    if (!activeCompany) return
     setLoading(true)
     try {
-      const res  = await fetch('/api/designs')
+      const res  = await fetch(`/api/designs?companyId=${activeCompany.id}`)
       const data = await res.json()
       const list: Design[] = Array.isArray(data) ? data : []
       setDesigns(list)
@@ -171,12 +174,19 @@ export default function DesignsPage() {
     }
   }
 
-  useEffect(() => { fetchDesigns(true) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!activeCompany) return
+    fetchDesigns(true)
+  }, [activeCompany]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function runSeed(feedback = true) {
     if (feedback) setSeeding(true)
     try {
-      const res  = await fetch('/api/designs/seed-default', { method: 'POST' })
+      const res  = await fetch('/api/designs/seed-default', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ownCompanyId: activeCompany!.id }),
+      })
       const data = await res.json()
       if (res.ok && data.design) {
         setDesigns((prev) =>
@@ -242,7 +252,7 @@ export default function DesignsPage() {
         await fetch('/api/designs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          body: JSON.stringify({ ...body, ownCompanyId: activeCompany!.id }),
         })
       }
       setDialogOpen(false)

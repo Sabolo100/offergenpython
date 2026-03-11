@@ -42,8 +42,8 @@ export async function generateCoreOffer(runItemId: string): Promise<string> {
   const { campaign } = run
 
   // ── 2. Fetch own-company knowledge items ──────────────────────────────────
-  // We expect a single OwnCompany record; take the first one if multiple exist.
-  const ownCompany = await prisma.ownCompany.findFirst({
+  const ownCompany = await prisma.ownCompany.findUnique({
+    where: { id: campaign.ownCompanyId },
     include: {
       knowledgeItems: {
         orderBy: { type: 'asc' },

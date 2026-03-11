@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -79,6 +80,7 @@ interface ClientFormProps {
 }
 
 function ClientForm({ client, open, onOpenChange, onSaved }: ClientFormProps) {
+  const { activeCompany } = useOwnCompany()
   const [form, setForm] = useState<ClientFormData>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -125,7 +127,7 @@ function ClientForm({ client, open, onOpenChange, onSaved }: ClientFormProps) {
         res = await fetch('/api/clients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          body: JSON.stringify({ ...body, ownCompanyId: activeCompany!.id }),
         })
       }
       if (!res.ok) throw new Error('Mentés sikertelen')
@@ -231,6 +233,7 @@ function ClientForm({ client, open, onOpenChange, onSaved }: ClientFormProps) {
 
 export default function ClientsPage() {
   const router = useRouter()
+  const { activeCompany } = useOwnCompany()
   const [clients, setClients] = useState<ClientCompany[]>([])
   const [loading, setLoading] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
@@ -240,12 +243,13 @@ export default function ClientsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetch('/api/clients')
+    if (!activeCompany) return
+    fetch(`/api/clients?companyId=${activeCompany.id}`)
       .then((r) => r.json())
       .then((data) => setClients(Array.isArray(data) ? data : []))
       .catch(() => setClients([]))
       .finally(() => setLoading(false))
-  }, [])
+  }, [activeCompany])
 
   function openAdd() {
     setEditingClient(null)

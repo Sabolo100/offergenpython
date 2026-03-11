@@ -11,13 +11,18 @@ datasource db {
 }
 
 model OwnCompany {
-  id             String          @id @default(cuid())
-  name           String
-  description    String?         @db.Text
-  website        String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  knowledgeItems KnowledgeItem[]
+  id                  String               @id @default(cuid())
+  name                String
+  description         String?              @db.Text
+  website             String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  knowledgeItems      KnowledgeItem[]
+  clientCompanies     ClientCompany[]
+  campaigns           Campaign[]
+  researchDefinitions ResearchDefinition[]
+  designs             Design[]
+  gmailToken          GmailToken?
 }
 
 model KnowledgeItem {
@@ -34,6 +39,8 @@ model KnowledgeItem {
 
 model ClientCompany {
   id              String           @id @default(cuid())
+  ownCompanyId    String
+  ownCompany      OwnCompany      @relation(fields: [ownCompanyId], references: [id], onDelete: Cascade)
   name            String
   brandName       String?
   industry        String?
@@ -64,6 +71,8 @@ model Contact {
 
 model Campaign {
   id                String             @id @default(cuid())
+  ownCompanyId      String
+  ownCompany        OwnCompany        @relation(fields: [ownCompanyId], references: [id], onDelete: Cascade)
   name              String
   description       String?
   language          String             @default("hu")
@@ -97,6 +106,8 @@ model CampaignContact {
 
 model ResearchDefinition {
   id            String           @id @default(cuid())
+  ownCompanyId  String
+  ownCompany    OwnCompany      @relation(fields: [ownCompanyId], references: [id], onDelete: Cascade)
   name          String
   description   String?
   aiPlatform    String           @default("perplexity") // perplexity | claude
@@ -143,12 +154,14 @@ model ModuleDefinition {
 }
 
 model Design {
-  id        String     @id @default(cuid())
-  name      String
-  config    Json
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  campaigns Campaign[]
+  id           String     @id @default(cuid())
+  ownCompanyId String
+  ownCompany   OwnCompany @relation(fields: [ownCompanyId], references: [id], onDelete: Cascade)
+  name         String
+  config       Json
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  campaigns    Campaign[]
 }
 
 model Run {
@@ -231,10 +244,12 @@ model EmailDraft {
 }
 
 model GmailToken {
-  id           String   @id @default(cuid())
-  accessToken  String   @db.Text
-  refreshToken String?  @db.Text
+  id           String      @id @default(cuid())
+  ownCompanyId String     @unique
+  ownCompany   OwnCompany @relation(fields: [ownCompanyId], references: [id], onDelete: Cascade)
+  accessToken  String      @db.Text
+  refreshToken String?     @db.Text
   expiryDate   BigInt?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }

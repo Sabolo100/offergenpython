@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 const DEFAULT_DESIGN_NAME = 'Semleges – Alapértelmezett'
 
@@ -38,11 +38,16 @@ const DEFAULT_CONFIG = {
   boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    // Idempotens: ha már létezik ilyen nevű, visszaadjuk azt
+    const { ownCompanyId } = await request.json()
+    if (!ownCompanyId) {
+      return NextResponse.json({ error: 'ownCompanyId required' }, { status: 400 })
+    }
+
+    // Idempotens: ha már létezik ilyen nevű az adott workspace-ben, visszaadjuk azt
     const existing = await prisma.design.findFirst({
-      where: { name: DEFAULT_DESIGN_NAME },
+      where: { name: DEFAULT_DESIGN_NAME, ownCompanyId },
       include: { _count: { select: { campaigns: true } } },
     })
 
@@ -52,6 +57,7 @@ export async function POST() {
 
     const design = await prisma.design.create({
       data: {
+        ownCompanyId,
         name: DEFAULT_DESIGN_NAME,
         config: DEFAULT_CONFIG,
       },

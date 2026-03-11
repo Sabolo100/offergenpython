@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -325,6 +326,7 @@ function ModuleForm({ campaignId, module, open, onOpenChange, onSaved, nextOrder
 export default function CampaignDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { activeCompany } = useOwnCompany()
   const id = params.id as string
 
   const [campaign, setCampaign] = useState<Campaign | null>(null)
@@ -374,6 +376,7 @@ export default function CampaignDetailPage() {
 
   // Load campaign
   useEffect(() => {
+    if (!activeCompany) return
     fetch(`/api/campaigns/${id}`)
       .then((r) => {
         if (r.status === 404) { setNotFound(true); return null }
@@ -397,17 +400,18 @@ export default function CampaignDetailPage() {
       .finally(() => setLoading(false))
 
     // Load designs for select
-    fetch('/api/designs')
+    fetch(`/api/designs?companyId=${activeCompany.id}`)
       .then((r) => r.json())
       .then((d) => setDesigns(Array.isArray(d) ? d : []))
       .catch(() => setDesigns([]))
-  }, [id])
+  }, [id, activeCompany])
 
   // Load runs for Futtatások tab (on demand would be ideal; here we load once)
   const loadRuns = useCallback(async () => {
+    if (!activeCompany) return
     setLoadingRuns(true)
     try {
-      const res = await fetch('/api/runs')
+      const res = await fetch(`/api/runs?companyId=${activeCompany.id}`)
       const data = await res.json()
       const campaignRuns = (Array.isArray(data) ? data : []).filter(
         (r: Run & { campaignId: string }) => r.campaignId === id
@@ -418,7 +422,7 @@ export default function CampaignDetailPage() {
     } finally {
       setLoadingRuns(false)
     }
-  }, [id])
+  }, [id, activeCompany])
 
   // Load all contacts for the contacts tab
   const loadAllContacts = useCallback(async () => {
@@ -449,6 +453,7 @@ export default function CampaignDetailPage() {
           language: basicForm.language,
           campaignName: basicForm.name,
           campaignDescription: basicForm.description,
+          ownCompanyId: activeCompany!.id,
         }),
       })
       const data = await res.json()

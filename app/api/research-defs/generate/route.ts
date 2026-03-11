@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     // 1. Kampány adatok
     const campaign = await prisma.campaign.findUnique({
       where: { id: campaignId },
-      select: { id: true, name: true, goal: true, systemPrompt: true, language: true },
+      select: { id: true, name: true, goal: true, systemPrompt: true, language: true, ownCompanyId: true },
     })
     if (!campaign) {
       return NextResponse.json({ error: 'Kampány nem található' }, { status: 404 })
@@ -208,12 +208,12 @@ export async function POST(request: NextRequest) {
 
     // 5. Meglévők törlése ha kérték
     if (replaceExisting) {
-      await prisma.researchDefinition.deleteMany({})
+      await prisma.researchDefinition.deleteMany({ where: { ownCompanyId: campaign.ownCompanyId } })
     }
 
     // 6. Mentés
     const created = await Promise.all(
-      sanitized.map((d) => prisma.researchDefinition.create({ data: d }))
+      sanitized.map((d) => prisma.researchDefinition.create({ data: { ...d, ownCompanyId: campaign.ownCompanyId } }))
     )
 
     return NextResponse.json({

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -28,6 +29,7 @@ interface Design {
 
 export default function NewCampaignPage() {
   const router = useRouter()
+  const { activeCompany } = useOwnCompany()
 
   // Form fields
   const [name, setName] = useState('')
@@ -46,12 +48,13 @@ export default function NewCampaignPage() {
   const [promptGenError, setPromptGenError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/designs')
+    if (!activeCompany) return
+    fetch(`/api/designs?companyId=${activeCompany.id}`)
       .then((r) => r.json())
       .then((data) => setDesigns(Array.isArray(data) ? data : []))
       .catch(() => setDesigns([]))
       .finally(() => setLoadingDesigns(false))
-  }, [])
+  }, [activeCompany])
 
   async function handleGeneratePrompt() {
     setGeneratingPrompt(true)
@@ -65,6 +68,7 @@ export default function NewCampaignPage() {
           language,
           campaignName: name,
           campaignDescription: description,
+          ownCompanyId: activeCompany!.id,
         }),
       })
       const data = await res.json()
@@ -97,6 +101,7 @@ export default function NewCampaignPage() {
         goal: goal || null,
         systemPrompt,
         designId: designId === 'none' ? null : designId || null,
+        ownCompanyId: activeCompany!.id,
       }
       const res = await fetch('/api/campaigns', {
         method: 'POST',

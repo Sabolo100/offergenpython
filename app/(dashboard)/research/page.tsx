@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -74,6 +75,8 @@ type FormState = typeof defaultForm
 // ── Komponens ─────────────────────────────────────────────────────────────────
 
 export default function ResearchPage() {
+  const { activeCompany } = useOwnCompany()
+
   // Alap lista
   const [defs, setDefs] = useState<ResearchDefinition[]>([])
   const [loading, setLoading] = useState(true)
@@ -104,9 +107,10 @@ export default function ResearchPage() {
   // ── Adatok betöltése ────────────────────────────────────────────────────────
 
   async function fetchDefs() {
+    if (!activeCompany) return
     setLoading(true)
     try {
-      const res = await fetch('/api/research-defs')
+      const res = await fetch(`/api/research-defs?companyId=${activeCompany.id}`)
       const data = await res.json()
       setDefs(data)
     } catch {
@@ -117,9 +121,10 @@ export default function ResearchPage() {
   }
 
   async function fetchCampaigns() {
+    if (!activeCompany) return
     setLoadingCampaigns(true)
     try {
-      const res = await fetch('/api/campaigns')
+      const res = await fetch(`/api/campaigns?companyId=${activeCompany.id}`)
       const data = await res.json()
       setCampaigns(Array.isArray(data) ? data : (data.campaigns ?? []))
     } catch {
@@ -130,9 +135,10 @@ export default function ResearchPage() {
   }
 
   useEffect(() => {
+    if (!activeCompany) return
     fetchDefs()
     fetchCampaigns()
-  }, [])
+  }, [activeCompany]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── CRUD ────────────────────────────────────────────────────────────────────
 
@@ -181,7 +187,7 @@ export default function ResearchPage() {
         await fetch('/api/research-defs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          body: JSON.stringify({ ...body, ownCompanyId: activeCompany!.id }),
         })
       }
       setDialogOpen(false)

@@ -45,18 +45,24 @@ const DEFAULT_DESIGN = {
 async function main() {
   console.log('🌱 Seed indítása...')
 
+  // Ensure there is at least one OwnCompany to attach the design to
+  const ownCompany = await prisma.ownCompany.findFirst()
+  if (!ownCompany) {
+    console.log('⚠️  Nincs OwnCompany rekord – design seed kihagyva. Hozz létre egy munkaterületet az alkalmazásban.')
+    console.log('🌱 Seed kész.')
+    return
+  }
+
   // Ellenőrzés: van-e már alapértelmezett design
   const existingDefault = await prisma.design.findFirst({
-    where: {
-      name: DEFAULT_DESIGN.name,
-    },
+    where: { name: DEFAULT_DESIGN.name, ownCompanyId: ownCompany.id },
   })
 
   if (existingDefault) {
     console.log('✅ Az alapértelmezett design már létezik:', existingDefault.id)
   } else {
     const created = await prisma.design.create({
-      data: DEFAULT_DESIGN as Parameters<typeof prisma.design.create>[0]['data'],
+      data: { ...DEFAULT_DESIGN, ownCompanyId: ownCompany.id },
     })
     console.log('✅ Alapértelmezett design létrehozva:', created.id)
   }

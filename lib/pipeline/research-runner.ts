@@ -63,12 +63,13 @@ export async function runResearchForClient(
       name: true,
       website: true,
       industry: true,
+      ownCompanyId: true,
     },
   })
 
-  // Fetch all active research definitions, ordered by priority ascending
+  // Fetch all active research definitions scoped to the same workspace
   const definitions = await prisma.researchDefinition.findMany({
-    where: { isActive: true },
+    where: { isActive: true, ownCompanyId: clientCompany.ownCompanyId },
     orderBy: { priority: 'asc' },
   })
 

@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
+  const stateRaw = searchParams.get('state')
 
   if (error) {
     return NextResponse.redirect(new URL('/settings?gmail=error', request.url))
@@ -14,8 +15,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/settings?gmail=no-code', request.url))
   }
 
+  let companyId: string | undefined
   try {
-    await exchangeCodeForToken(code)
+    if (stateRaw) {
+      const parsed = JSON.parse(stateRaw)
+      companyId = parsed.companyId
+    }
+  } catch {}
+
+  if (!companyId) {
+    return NextResponse.redirect(new URL('/settings?gmail=no-company', request.url))
+  }
+
+  try {
+    await exchangeCodeForToken(code, companyId)
     return NextResponse.redirect(new URL('/settings?gmail=success', request.url))
   } catch (err) {
     console.error('Gmail OAuth error:', err)

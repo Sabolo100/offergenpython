@@ -10,14 +10,18 @@ const LANGUAGE_NAMES: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { campaignGoal, language = 'hu', campaignName, campaignDescription } = await request.json()
+    const { campaignGoal, language = 'hu', campaignName, campaignDescription, ownCompanyId } = await request.json()
 
     if (!campaignGoal?.trim()) {
       return NextResponse.json({ error: 'A kampánycél megadása kötelező' }, { status: 400 })
     }
+    if (!ownCompanyId) {
+      return NextResponse.json({ error: 'ownCompanyId megadása kötelező' }, { status: 400 })
+    }
 
     // Saját cég tudásbázisának összegyűjtése
-    const ownCompany = await prisma.ownCompany.findFirst({
+    const ownCompany = await prisma.ownCompany.findUnique({
+      where: { id: ownCompanyId },
       include: { knowledgeItems: { orderBy: { type: 'asc' } } },
     })
 

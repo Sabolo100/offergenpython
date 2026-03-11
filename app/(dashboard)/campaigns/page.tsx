@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -64,18 +65,20 @@ const LANGUAGE_LABELS: Record<string, string> = {
 
 export default function CampaignsPage() {
   const router = useRouter()
+  const { activeCompany } = useOwnCompany()
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/campaigns')
+    if (!activeCompany) return
+    fetch(`/api/campaigns?companyId=${activeCompany.id}`)
       .then((r) => r.json())
       .then((data) => setCampaigns(Array.isArray(data) ? data : []))
       .catch(() => setCampaigns([]))
       .finally(() => setLoading(false))
-  }, [])
+  }, [activeCompany])
 
   function handleDelete(id: string, e: React.MouseEvent) {
     e.stopPropagation()

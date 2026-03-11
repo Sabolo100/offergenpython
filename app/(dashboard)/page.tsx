@@ -1,66 +1,50 @@
-export const dynamic = 'force-dynamic'
+'use client'
 
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users, Megaphone, Play, CheckCircle, ArrowRight } from 'lucide-react'
-import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { formatDateTime } from '@/lib/utils'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 
-async function getDashboardStats() {
-  const [clientCount, campaignCount, runCount, completedItems, recentRuns] = await Promise.all([
-    prisma.clientCompany.count(),
-    prisma.campaign.count(),
-    prisma.run.count(),
-    prisma.runItem.count({ where: { status: 'completed' } }),
-    prisma.run.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        campaign: { select: { name: true } },
-        _count: { select: { runItems: true } },
-      },
-    }),
-  ])
-  return { clientCount, campaignCount, runCount, completedItems, recentRuns }
+interface Stats {
+  clientCount: number
+  campaignCount: number
+  runCount: number
+  completedRunItemCount: number
 }
 
-export default async function DashboardPage() {
-  const stats = await getDashboardStats()
+interface RecentRun {
+  id: string
+  status: string
+  createdAt: string
+  campaign: { name: string }
+  _count: { runItems: number }
+}
+
+export default function DashboardPage() {
+  const { activeCompany } = useOwnCompany()
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [recentRuns, setRecentRuns] = useState<RecentRun[]>([])
+
+  useEffect(() => {
+    if (!activeCompany) return
+    const id = activeCompany.id
+    Promise.all([
+      fetch(`/api/dashboard?companyId=${id}`).then((r) => r.json()),
+      fetch(`/api/runs?companyId=${id}`).then((r) => r.json()),
+    ]).then(([s, runs]) => {
+      setStats(s)
+      setRecentRuns(Array.isArray(runs) ? runs.slice(0, 5) : [])
+    })
+  }, [activeCompany])
 
   const cards = [
-    {
-      title: 'Ügyfélcégek',
-      value: stats.clientCount,
-      icon: Users,
-      href: '/clients',
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-    },
-    {
-      title: 'Kampányok',
-      value: stats.campaignCount,
-      icon: Megaphone,
-      href: '/campaigns',
-      color: 'text-purple-600',
-      bg: 'bg-purple-50',
-    },
-    {
-      title: 'Futtatások',
-      value: stats.runCount,
-      icon: Play,
-      href: '/runs',
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-    },
-    {
-      title: 'Kész ajánlatok',
-      value: stats.completedItems,
-      icon: CheckCircle,
-      href: '/editor',
-      color: 'text-orange-600',
-      bg: 'bg-orange-50',
-    },
+    { title: 'Ügyfélcégek', value: stats?.clientCount ?? '–', icon: Users, href: '/clients', color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: 'Kampányok', value: stats?.campaignCount ?? '–', icon: Megaphone, href: '/campaigns', color: 'text-purple-600', bg: 'bg-purple-50' },
+    { title: 'Futtatások', value: stats?.runCount ?? '–', icon: Play, href: '/runs', color: 'text-green-600', bg: 'bg-green-50' },
+    { title: 'Kész ajánlatok', value: stats?.completedRunItemCount ?? '–', icon: CheckCircle, href: '/editor', color: 'text-orange-600', bg: 'bg-orange-50' },
   ]
 
   return (
@@ -68,7 +52,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-1">
-          B2B Ajánlatkészítő Platform áttekintése
+          {activeCompany ? activeCompany.name : 'B2B Ajánlatkészítő Platform'} áttekintése
         </p>
       </div>
 
@@ -105,7 +89,7 @@ export default async function DashboardPage() {
             </Link>
           </CardHeader>
           <CardContent>
-            {stats.recentRuns.length === 0 ? (
+            {recentRuns.length === 0 ? (
               <p className="text-muted-foreground text-sm py-4 text-center">
                 Még nincs futtatás.{' '}
                 <Link href="/campaigns" className="text-primary hover:underline">
@@ -114,13 +98,13 @@ export default async function DashboardPage() {
               </p>
             ) : (
               <div className="space-y-3">
-                {stats.recentRuns.map((run) => (
+                {recentRuns.map((run) => (
                   <Link key={run.id} href={`/runs/${run.id}`}>
                     <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors">
                       <div>
                         <p className="text-sm font-medium">{run.campaign.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {formatDateTime(run.createdAt)} · {run._count.runItems} ügyfél
+                          {formatDateTime(new Date(run.createdAt))} · {run._count.runItems} ügyfél
                         </p>
                       </div>
                       <span
@@ -134,13 +118,7 @@ export default async function DashboardPage() {
                             : 'bg-gray-100 text-gray-700'
                         }`}
                       >
-                        {run.status === 'completed'
-                          ? 'Kész'
-                          : run.status === 'running'
-                          ? 'Fut'
-                          : run.status === 'failed'
-                          ? 'Hiba'
-                          : 'Várakozik'}
+                        {run.status === 'completed' ? 'Kész' : run.status === 'running' ? 'Fut' : run.status === 'failed' ? 'Hiba' : 'Várakozik'}
                       </span>
                     </div>
                   </Link>

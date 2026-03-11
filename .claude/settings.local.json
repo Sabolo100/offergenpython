@@ -33,7 +33,23 @@
       "Bash(node -e \"const { Presentation } = require\\(''lucide-react''\\); console.log\\(typeof Presentation\\)\")",
       "Bash(test -d \"C:\\\\Users\\\\szbud\\\\claude laptop\\\\A4C_Claude Cowork Demo Offer Gen\\\\node_modules\\\\sharp\")",
       "Bash(node -e \"require\\(''sharp''\\); console.log\\(''sharp OK''\\)\")",
-      "Bash(npx tsc --noEmit --skipLibCheck)"
+      "Bash(npx tsc --noEmit --skipLibCheck)",
+      "Bash(gh --version)",
+      "Bash(gh auth status)",
+      "Bash(gh repo create offergenpython --source=. --remote=origin --push --public --description \"B2B autonomous offer generation platform – Next.js 16, PostgreSQL, Claude API, Gemini API\")",
+      "Bash(gh repo view Sabolo100/offergenpython --json description,url,nameWithOwner)",
+      "Bash(gh repo view Sabolo100/offergenpython --web)",
+      "Bash(xargs grep -l \"useContext\\\\|createContext\\\\|localStorage\\\\|sessionStorage\")",
+      "Bash(ls \"C:\\\\Users\\\\szbud\\\\claude laptop\\\\A4C_Claude Cowork Demo Offer Gen\\\\app\\\\\\(dashboard\\)\")",
+      "Bash(ls \"C:\\\\Users\\\\szbud\\\\claude laptop\\\\A4C_Claude Cowork Demo Offer Gen\\\\app\\\\\\(dashboard\\)\\\\settings\")",
+      "Bash(ls \"C:\\\\Users\\\\szbud\\\\claude laptop\\\\A4C_Claude Cowork Demo Offer Gen\\\\app\\\\\\(dashboard\\)\\\\runs\")",
+      "Bash(ls \"C:\\\\Users\\\\szbud\\\\claude laptop\\\\A4C_Claude Cowork Demo Offer Gen\\\\app\\\\\\(dashboard\\)\\\\research\")",
+      "Bash(ls \"C:\\\\Users\\\\szbud\\\\claude laptop\\\\A4C_Claude Cowork Demo Offer Gen\\\\app\\\\\\(dashboard\\)\\\\designs\")",
+      "Bash(find \"C:\\\\Users\\\\szbud\\\\claude laptop\\\\A4C_Claude Cowork Demo Offer Gen\\\\app\\\\\\(dashboard\\)\" -name \"page.tsx\")",
+      "Bash(npx prisma migrate dev --name add_workspace_isolation)",
+      "Bash(npx prisma migrate dev --name add_workspace_isolation --create-only)",
+      "Bash(npx prisma db push)",
+      "Bash(npx prisma db push --accept-data-loss)"
     ]
   }
 }

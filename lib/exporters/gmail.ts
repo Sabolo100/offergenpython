@@ -11,21 +11,22 @@ function getOAuth2Client() {
   )
 }
 
-export function getGmailAuthUrl(): string {
+export function getGmailAuthUrl(companyId: string): string {
   const oauth2Client = getOAuth2Client()
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: ['https://www.googleapis.com/auth/gmail.compose'],
     prompt: 'consent',
+    state: JSON.stringify({ companyId }),
   })
 }
 
-export async function exchangeCodeForToken(code: string) {
+export async function exchangeCodeForToken(code: string, companyId: string) {
   const oauth2Client = getOAuth2Client()
   const { tokens } = await oauth2Client.getToken(code)
 
-  // Save tokens to DB
-  const existing = await prisma.gmailToken.findFirst()
+  // Save tokens to DB scoped to workspace
+  const existing = await prisma.gmailToken.findFirst({ where: { ownCompanyId: companyId } })
   if (existing) {
     await prisma.gmailToken.update({
       where: { id: existing.id },
@@ -38,6 +39,7 @@ export async function exchangeCodeForToken(code: string) {
   } else {
     await prisma.gmailToken.create({
       data: {
+        ownCompanyId: companyId,
         accessToken: tokens.access_token!,
         refreshToken: tokens.refresh_token ?? null,
         expiryDate: tokens.expiry_date ? BigInt(tokens.expiry_date) : null,
@@ -48,8 +50,8 @@ export async function exchangeCodeForToken(code: string) {
   return tokens
 }
 
-async function getAuthenticatedClient() {
-  const tokenRecord = await prisma.gmailToken.findFirst()
+async function getAuthenticatedClient(companyId: string) {
+  const tokenRecord = await prisma.gmailToken.findFirst({ where: { ownCompanyId: companyId } })
   if (!tokenRecord) throw new Error('Gmail not connected. Please authenticate first.')
 
   const oauth2Client = getOAuth2Client()
@@ -62,7 +64,8 @@ async function getAuthenticatedClient() {
   // Auto-refresh if needed
   oauth2Client.on('tokens', async (tokens) => {
     if (tokens.access_token) {
-      await prisma.gmailToken.updateMany({
+      await prisma.gmailToken.update({
+        where: { id: tokenRecord.id },
         data: {
           accessToken: tokens.access_token,
           expiryDate: tokens.expiry_date ? BigInt(tokens.expiry_date) : null,
@@ -79,6 +82,7 @@ export async function createGmailDraft(runItemId: string): Promise<string> {
     where: { id: runItemId },
     include: {
       contact: true,
+      clientCompany: { select: { ownCompanyId: true } },
       emailDrafts: { orderBy: { createdAt: 'desc' }, take: 1 },
       exports: { where: { type: 'pdf' }, orderBy: { createdAt: 'desc' }, take: 1 },
     },
@@ -90,7 +94,8 @@ export async function createGmailDraft(runItemId: string): Promise<string> {
   const emailDraft = runItem.emailDrafts[0]
   if (!emailDraft) throw new Error('No email draft generated yet')
 
-  const auth = await getAuthenticatedClient()
+  const companyId = runItem.clientCompany.ownCompanyId
+  const auth = await getAuthenticatedClient(companyId)
   const gmail = google.gmail({ version: 'v1', auth })
 
   const to = runItem.contact.email
@@ -176,15 +181,15 @@ export async function createGmailDraft(runItemId: string): Promise<string> {
   return gmailDraftId
 }
 
-export async function getGmailConnectionStatus(): Promise<{
+export async function getGmailConnectionStatus(companyId: string): Promise<{
   connected: boolean
   email?: string
 }> {
   try {
-    const tokenRecord = await prisma.gmailToken.findFirst()
+    const tokenRecord = await prisma.gmailToken.findFirst({ where: { ownCompanyId: companyId } })
     if (!tokenRecord) return { connected: false }
 
-    const auth = await getAuthenticatedClient()
+    const auth = await getAuthenticatedClient(companyId)
     const gmail = google.gmail({ version: 'v1', auth })
     const profile = await gmail.users.getProfile({ userId: 'me' })
     return { connected: true, email: profile.data.emailAddress ?? undefined }

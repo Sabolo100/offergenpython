@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { CheckCircle, XCircle, Key, Mail, Database, ExternalLink, RefreshCw } from 'lucide-react'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 
 interface ApiKeyStatus {
   key: string
@@ -54,6 +55,7 @@ function StatusBadge({ isSet }: { isSet: boolean }) {
 }
 
 export default function SettingsPage() {
+  const { activeCompany } = useOwnCompany()
   const [settings, setSettings] = useState<SettingsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [gmailConnecting, setGmailConnecting] = useState(false)
@@ -102,21 +104,9 @@ export default function SettingsPage() {
     }
   }
 
-  async function connectGmail() {
-    setGmailConnecting(true)
-    try {
-      const res = await fetch('/api/gmail/auth')
-      const data = await res.json()
-      if (data.authUrl) {
-        window.location.href = data.authUrl
-      } else {
-        setError('Nem sikerült Gmail auth URL-t generálni.')
-        setGmailConnecting(false)
-      }
-    } catch {
-      setError('Gmail kapcsolódás sikertelen.')
-      setGmailConnecting(false)
-    }
+  function connectGmail() {
+    if (!activeCompany) return
+    window.location.href = `/api/gmail/auth?companyId=${activeCompany.id}`
   }
 
   useEffect(() => {

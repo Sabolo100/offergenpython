@@ -39,6 +39,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -519,6 +520,7 @@ function FileUploadDialog({ companyId, open, onOpenChange, onUploaded }: FileUpl
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function CompanyPage() {
+  const { activeCompany, refetchCompanies, setActiveCompany } = useOwnCompany()
   const [company, setCompany] = useState<OwnCompany | null>(null)
   const [loading, setLoading] = useState(true)
   const [companyFormOpen, setCompanyFormOpen] = useState(false)
@@ -528,15 +530,24 @@ export default function CompanyPage() {
   const [uploadOpen, setUploadOpen] = useState(false)
 
   useEffect(() => {
-    fetch('/api/own-company')
+    if (!activeCompany) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    fetch(`/api/own-company/${activeCompany.id}`)
       .then((r) => r.json())
       .then((data) => setCompany(data ?? null))
       .catch(() => setCompany(null))
       .finally(() => setLoading(false))
-  }, [])
+  }, [activeCompany])
 
-  function handleCompanySaved(saved: OwnCompany) {
-    // Preserve knowledgeItems from the current state if not returned by update
+  async function handleCompanySaved(saved: OwnCompany) {
+    // If this was a new company creation, update the context
+    if (!company) {
+      await refetchCompanies()
+      setActiveCompany({ id: saved.id, name: saved.name, description: saved.description, website: saved.website })
+    }
     setCompany((prev) => ({
       ...saved,
       knowledgeItems: saved.knowledgeItems ?? prev?.knowledgeItems ?? [],

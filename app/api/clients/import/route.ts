@@ -6,8 +6,12 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
+    const ownCompanyId = formData.get('ownCompanyId') as string | null
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    }
+    if (!ownCompanyId) {
+      return NextResponse.json({ error: 'ownCompanyId required' }, { status: 400 })
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
@@ -27,6 +31,7 @@ export async function POST(request: NextRequest) {
 
         const company = await prisma.clientCompany.create({
           data: {
+            ownCompanyId,
             name: String(row.name || ''),
             brandName: row.brandName ? String(row.brandName) : null,
             industry: row.industry ? String(row.industry) : null,
