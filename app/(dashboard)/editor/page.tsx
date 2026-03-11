@@ -125,7 +125,7 @@ export default function EditorListPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">Összes kampány</SelectItem>
+              <SelectItem key="all" value="all">Összes kampány</SelectItem>
               {campaigns.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
