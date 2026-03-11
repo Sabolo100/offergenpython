@@ -1,0 +1,240 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model OwnCompany {
+  id             String          @id @default(cuid())
+  name           String
+  description    String?         @db.Text
+  website        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  knowledgeItems KnowledgeItem[]
+}
+
+model KnowledgeItem {
+  id           String     @id @default(cuid())
+  ownCompanyId String
+  ownCompany   OwnCompany @relation(fields: [ownCompanyId], references: [id], onDelete: Cascade)
+  type         String     // service | reference | case-study | team | closing | other
+  title        String
+  content      String     @db.Text
+  fileUrl      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model ClientCompany {
+  id              String           @id @default(cuid())
+  name            String
+  brandName       String?
+  industry        String?
+  country         String?
+  website         String?
+  notes           String?          @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  contacts        Contact[]
+  researchResults ResearchResult[]
+  runItems        RunItem[]
+}
+
+model Contact {
+  id               String            @id @default(cuid())
+  clientCompanyId  String
+  clientCompany    ClientCompany     @relation(fields: [clientCompanyId], references: [id], onDelete: Cascade)
+  name             String
+  position         String?
+  email            String
+  notes            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  campaignContacts CampaignContact[]
+  runItems         RunItem[]
+  emailDrafts      EmailDraft[]
+}
+
+model Campaign {
+  id                String             @id @default(cuid())
+  name              String
+  description       String?
+  language          String             @default("hu")
+  goal              String?            @db.Text
+  systemPrompt      String             @db.Text
+  startDate         DateTime?
+  endDate           DateTime?
+  status            String             @default("draft") // draft | active | archived
+  exportSettings    Json?
+  emailSettings     Json?
+  designId          String?
+  design            Design?            @relation(fields: [designId], references: [id])
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  campaignContacts  CampaignContact[]
+  moduleDefinitions ModuleDefinition[]
+  runs              Run[]
+}
+
+model CampaignContact {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId  String
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
+
+  @@unique([campaignId, contactId])
+}
+
+model ResearchDefinition {
+  id            String           @id @default(cuid())
+  name          String
+  description   String?
+  aiPlatform    String           @default("perplexity") // perplexity | claude
+  prompt        String           @db.Text
+  resultFormat  String?
+  freshnessDays Int              @default(7)
+  priority      Int              @default(0)
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  results       ResearchResult[]
+}
+
+model ResearchResult {
+  id                   String             @id @default(cuid())
+  clientCompanyId      String
+  clientCompany        ClientCompany      @relation(fields: [clientCompanyId], references: [id], onDelete: Cascade)
+  researchDefinitionId String
+  researchDefinition   ResearchDefinition @relation(fields: [researchDefinitionId], references: [id])
+  runItemId            String?
+  content              String             @db.Text
+  model                String?
+  status               String             @default("done")
+  createdAt            DateTime           @default(now())
+}
+
+model ModuleDefinition {
+  id              String           @id @default(cuid())
+  campaignId      String
+  campaign        Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name            String
+  type            String           // fixed | variable
+  goal            String?          @db.Text
+  order           Int              @default(0)
+  isRequired      Boolean          @default(true)
+  contentTypes    Json?            // ["text", "image", "video"]
+  prompt          String?          @db.Text
+  designNotes     String?
+  dependencies    Json?
+  fixedContent    String?          @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  moduleInstances ModuleInstance[]
+}
+
+model Design {
+  id        String     @id @default(cuid())
+  name      String
+  config    Json
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  campaigns Campaign[]
+}
+
+model Run {
+  id          String    @id @default(cuid())
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [id])
+  status      String    @default("pending") // pending | running | completed | partial | failed
+  startedAt   DateTime?
+  completedAt DateTime?
+  logs        Json?
+  createdAt   DateTime  @default(now())
+  runItems    RunItem[]
+}
+
+model RunItem {
+  id              String           @id @default(cuid())
+  runId           String
+  run             Run              @relation(fields: [runId], references: [id])
+  clientCompanyId String
+  clientCompany   ClientCompany    @relation(fields: [clientCompanyId], references: [id])
+  contactId       String?
+  contact         Contact?         @relation(fields: [contactId], references: [id])
+  status          String           @default("pending")
+  currentStep     String?
+  errorMessage    String?          @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  coreOffer       CoreOffer?
+  moduleInstances ModuleInstance[]
+  exports         Export[]
+  emailDrafts     EmailDraft[]
+}
+
+model CoreOffer {
+  id        String   @id @default(cuid())
+  runItemId String   @unique
+  runItem   RunItem  @relation(fields: [runItemId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ModuleInstance {
+  id                 String           @id @default(cuid())
+  runItemId          String
+  runItem            RunItem          @relation(fields: [runItemId], references: [id], onDelete: Cascade)
+  moduleDefinitionId String
+  moduleDefinition   ModuleDefinition @relation(fields: [moduleDefinitionId], references: [id])
+  content            Json
+  status             String           @default("pending")
+  version            Int              @default(1)
+  updatedAt          DateTime         @updatedAt
+}
+
+model Export {
+  id        String   @id @default(cuid())
+  runItemId String
+  runItem   RunItem  @relation(fields: [runItemId], references: [id], onDelete: Cascade)
+  type      String   // pdf | ppt | web
+  fileUrl   String?
+  filePath  String?
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+}
+
+model EmailDraft {
+  id           String   @id @default(cuid())
+  runItemId    String
+  runItem      RunItem  @relation(fields: [runItemId], references: [id], onDelete: Cascade)
+  contactId    String
+  contact      Contact  @relation(fields: [contactId], references: [id])
+  subject      String
+  body         String   @db.Text
+  attachments  Json?
+  gmailDraftId String?
+  status       String   @default("pending") // pending | created | failed
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model GmailToken {
+  id           String   @id @default(cuid())
+  accessToken  String   @db.Text
+  refreshToken String?  @db.Text
+  expiryDate   BigInt?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

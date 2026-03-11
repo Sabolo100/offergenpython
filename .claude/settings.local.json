@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"C:\\\\Users\\\\szbud\\\\.claude\\\\projects\\\\C--Users-szbud-claude-laptop-A4C-Claude-Cowork-Demo-Offer-Gen\\\\memory\"\" 2>/dev/null || echo \"Memory directory does not exist \")",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --no-eslint --yes)",
+      "Bash(npm install --legacy-peer-deps)",
+      "Bash(npm install next@latest --legacy-peer-deps)",
+      "Bash(npm install tailwindcss-animate class-variance-authority clsx tailwind-merge lucide-react --legacy-peer-deps)",
+      "Bash(npm install @radix-ui/react-slot @radix-ui/react-dialog @radix-ui/react-select @radix-ui/react-label @radix-ui/react-badge @radix-ui/react-tabs @radix-ui/react-separator @radix-ui/react-toast @radix-ui/react-checkbox @radix-ui/react-textarea --legacy-peer-deps)",
+      "Bash(npm install @radix-ui/react-slot @radix-ui/react-dialog @radix-ui/react-select @radix-ui/react-label @radix-ui/react-tabs @radix-ui/react-separator @radix-ui/react-toast @radix-ui/react-checkbox --legacy-peer-deps)",
+      "Bash(npx prisma generate)",
+      "Bash(npm run build)",
+      "Bash(sc query postgresql*)",
+      "Bash(where psql)",
+      "Bash(docker --version)",
+      "Bash(docker info)",
+      "Bash(docker run -d --name offer-gen-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=offer_gen -p 5432:5432 postgres:16)",
+      "Bash(node -e \"console.log\\(''DATABASE_URL:'', process.env.DATABASE_URL || ''NOT SET''\\); console.log\\(''ANTHROPIC_API_KEY set:'', !!process.env.ANTHROPIC_API_KEY\\)\")",
+      "Bash(npm install dotenv --save-dev)",
+      "Bash(node test-env.js)",
+      "Bash(npm install officeparser --legacy-peer-deps)",
+      "Bash(node -e \"require\\(''officeparser''\\); console.log\\(''officeparser OK''\\)\")",
+      "Bash(npm install mammoth pdf-parse @types/pdf-parse)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(head -1 \"C:\\\\Users\\\\szbud\\\\claude laptop\\\\A4C_Claude Cowork Demo Offer Gen\\\\app\\\\\\(dashboard\\)\\\\designs\\\\page.tsx\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); fs.writeFileSync\\(''app/\\(dashboard\\)/designs/page.tsx'', fs.readFileSync\\(''app/\\(dashboard\\)/designs/page.tsx'', ''utf8''\\).slice\\(0,1\\)\\); console.log\\(''touched''\\)\")",
+      "Bash(npx next build)",
+      "Bash(dir \"C:\\\\Users\\\\szbud\\\\claude laptop\\\\A4C_Claude Cowork Demo Offer Gen\"\" /b | findstr /i \"env \")",
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(npm install pptxgenjs @google/genai)",
+      "Bash(node -e \"const { Presentation } = require\\(''lucide-react''\\); console.log\\(typeof Presentation\\)\")",
+      "Bash(test -d \"C:\\\\Users\\\\szbud\\\\claude laptop\\\\A4C_Claude Cowork Demo Offer Gen\\\\node_modules\\\\sharp\")",
+      "Bash(node -e \"require\\(''sharp''\\); console.log\\(''sharp OK''\\)\")",
+      "Bash(npx tsc --noEmit --skipLibCheck)"
+    ]
+  }
+}
