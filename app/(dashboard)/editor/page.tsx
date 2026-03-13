@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useOwnCompany } from '@/contexts/OwnCompanyContext'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -51,6 +52,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function EditorListPage() {
   const router = useRouter()
+  const { activeCompany } = useOwnCompany()
   const [items, setItems] = useState<RunItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -58,11 +60,13 @@ export default function EditorListPage() {
   const [campaignFilter, setCampaignFilter] = useState<string>('all')
 
   useEffect(() => {
+    if (!activeCompany) return
     async function fetchItems() {
       setLoading(true)
       try {
         const params = new URLSearchParams({
           status: EDITABLE_STATUSES.join(','),
+          companyId: activeCompany!.id,
         })
         const res = await fetch(`/api/run-items?${params}`)
         const data = await res.json()
@@ -74,7 +78,7 @@ export default function EditorListPage() {
       }
     }
     fetchItems()
-  }, [])
+  }, [activeCompany])
 
   // Derive unique campaigns from items
   const campaigns = Array.from(

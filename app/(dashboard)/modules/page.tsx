@@ -344,7 +344,7 @@ export default function ModulesPage() {
     try {
       const [campaignsRes, modulesRes] = await Promise.all([
         fetch(`/api/campaigns?companyId=${activeCompany.id}`),
-        fetch('/api/module-defs'),   // ← javítva: module-defs (nem module-definitions)
+        fetch(`/api/module-defs?companyId=${activeCompany.id}`),
       ])
       const campaignsData = await campaignsRes.json()
       const modulesData = await modulesRes.json()

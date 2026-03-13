@@ -4,15 +4,16 @@ import { prisma } from '@/lib/prisma'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const completed = searchParams.get('completed')
+    const companyId = searchParams.get('companyId')
+    const statusParam = searchParams.get('status')
 
-    const where = completed
-      ? {
-          status: {
-            in: ['modules_done', 'export_done', 'email_done', 'completed'],
-          },
-        }
-      : {}
+    const where: Record<string, unknown> = {}
+    if (companyId) {
+      where.run = { campaign: { ownCompanyId: companyId } }
+    }
+    if (statusParam) {
+      where.status = { in: statusParam.split(',') }
+    }
 
     const runItems = await prisma.runItem.findMany({
       where,

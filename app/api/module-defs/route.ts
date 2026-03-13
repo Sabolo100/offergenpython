@@ -4,10 +4,16 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const companyId = searchParams.get('companyId')
     const campaignId = searchParams.get('campaignId')
 
+    const where = {
+      ...(companyId ? { campaign: { ownCompanyId: companyId } } : {}),
+      ...(campaignId ? { campaignId } : {}),
+    }
+
     const defs = await prisma.moduleDefinition.findMany({
-      where: campaignId ? { campaignId } : undefined,
+      where: Object.keys(where).length > 0 ? where : undefined,
       include: {
         campaign: { select: { id: true, name: true } },
       },
